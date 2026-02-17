@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ClientForm from '../../components/clients/ClientForm';
 import ClientTable from '../../components/clients/ClientTable';
 import ClientViewModal from '../../components/clients/ClientViewModal';
