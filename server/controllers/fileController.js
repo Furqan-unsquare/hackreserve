@@ -1,6 +1,7 @@
 // server/controllers/fileController.js
 const File = require('../models/File');
 const Client = require('../models/Client');
+const mongoose = require('mongoose');
 
 const getAllFiles = async (req, res) => {
     try {
@@ -123,6 +124,16 @@ const addDocument = async (req, res) => {
     }
 };
 
+const getClientFiles = async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        const files = await File.find({ clientId: new mongoose.Types.ObjectId(clientId) }).sort({ createdAt: -1 });
+        res.json(files.map(f => ({ ...f._doc, id: f._id })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     getAllFiles,
     createFile,
@@ -131,5 +142,6 @@ module.exports = {
     updateFile,
     addFollowUp,
     getDocuments,
-    addDocument
+    addDocument,
+    getClientFiles
 };

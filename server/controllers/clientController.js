@@ -1,11 +1,26 @@
 // server/controllers/clientController.js
 const Client = require('../models/Client');
 const File = require('../models/File');
+const mongoose = require('mongoose');
 
 const getAllClients = async (req, res) => {
     try {
         const clients = await Client.find().sort({ createdAt: -1 });
         res.json(clients.map(c => ({ ...c._doc, id: c._id })));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const getClientFiles = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Ensure id is valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: 'Invalid client ID' });
+        }
+        const files = await File.find({ clientId: new mongoose.Types.ObjectId(id) }).sort({ createdAt: -1 });
+        res.json(files.map(f => ({ ...f._doc, id: f._id })));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -47,4 +62,4 @@ const deleteClient = async (req, res) => {
     }
 };
 
-module.exports = { getAllClients, createClient, updateClient, deleteClient };
+module.exports = { getAllClients, createClient, updateClient, deleteClient, getClientFiles };
