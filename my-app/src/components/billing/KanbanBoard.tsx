@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { FileText, User, Eye, Edit2, Trash2, Send, ChevronDown } from 'lucide-react';
+import { FileText, User, Eye, Edit2, Trash2, Send, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const KanbanItem = ({
     id,
@@ -30,6 +30,7 @@ export const KanbanItem = ({
 
     const handleAction = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
+        e.preventDefault();
         action();
     };
 
@@ -40,7 +41,7 @@ export const KanbanItem = ({
             {...listeners}
             {...attributes}
             className="kanban-item"
-            onClick={() => onView(id)} // Entire card clickable
+            onClick={() => onView(id)}
             role="button"
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
@@ -51,6 +52,7 @@ export const KanbanItem = ({
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                     <button
                         className="action-btn"
+                        onPointerDown={(e) => e.stopPropagation()} // Stop dnd-kit pointer down
                         onClick={(e) => handleAction(e, () => onView(id))}
                         title="View Details/Documents"
                     >
@@ -58,6 +60,7 @@ export const KanbanItem = ({
                     </button>
                     <button
                         className="action-btn"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleAction(e, () => onEdit(id))}
                         title="Edit File"
                     >
@@ -65,6 +68,7 @@ export const KanbanItem = ({
                     </button>
                     <button
                         className="action-btn delete"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleAction(e, () => onDelete(id))}
                         title="Delete File"
                     >
@@ -85,6 +89,7 @@ export const KanbanItem = ({
 
                 <button
                     className="followup-btn"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => handleAction(e, () => onFollowUp(id))}
                     title="Send Follow-up"
                 >
@@ -101,9 +106,11 @@ export const KanbanColumn = ({ id, title, children, color }: { id: string, title
         id: id,
     });
 
-    const [visibleCount, setVisibleCount] = useState(3);
+    const INITIAL_COUNT = 3;
+    const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
     const childrenArray = React.Children.toArray(children);
     const hasMore = childrenArray.length > visibleCount;
+    const canShowLess = visibleCount > INITIAL_COUNT;
 
     return (
         <div
@@ -124,29 +131,51 @@ export const KanbanColumn = ({ id, title, children, color }: { id: string, title
             </div>
             <div className="kanban-column-content">
                 {childrenArray.slice(0, visibleCount)}
-                {hasMore && (
-                    <button
-                        onClick={() => setVisibleCount(prev => prev + 4)}
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            background: 'white',
-                            border: '1px dashed var(--border)',
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            color: 'var(--primary)',
-                            cursor: 'pointer',
-                            marginTop: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <ChevronDown size={14} />
-                        Load {childrenArray.length - visibleCount} more
-                    </button>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {hasMore && (
+                        <button
+                            onClick={() => setVisibleCount(prev => prev + 4)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                background: 'white',
+                                border: '1px dashed var(--border)',
+                                borderRadius: '8px',
+                                fontSize: '0.75rem',
+                                color: 'var(--primary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <ChevronDown size={14} />
+                            Load {childrenArray.length - visibleCount} more
+                        </button>
+                    )}
+                    {canShowLess && (
+                        <button
+                            onClick={() => setVisibleCount(INITIAL_COUNT)}
+                            style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                background: 'transparent',
+                                border: 'none',
+                                fontSize: '0.75rem',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.25rem'
+                            }}
+                        >
+                            <ChevronUp size={14} />
+                            Show Less
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

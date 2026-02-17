@@ -5,7 +5,7 @@ const ClientSchema = new mongoose.Schema({
     email: { type: String, required: true },
     phone: { type: String },
     telegramId: { type: String },
-    category: { type: String, required: true },
+    category: { type: String, enum: ['salaried', 'small business'], required: true },
     status: { type: String, default: 'onboarded' },
     details: { type: String },
     createdAt: { type: Date, default: Date.now }

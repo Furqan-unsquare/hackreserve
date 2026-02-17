@@ -31,7 +31,11 @@ const BillingProcess = () => {
     const [isAddingFile, setIsAddingFile] = useState(false);
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
         useSensor(KeyboardSensor)
     );
 
@@ -70,8 +74,14 @@ const BillingProcess = () => {
 
                     try {
                         await api.put(`/api/files/${active.id}/status`, { status: newStatus });
-                    } catch (err) {
-                        console.error('Failed to update file status', err);
+                    } catch (err: any) {
+                        const errorMsg = err.response?.data?.message || 'Failed to update status';
+                        if (err.response?.status === 400) {
+                            alert(`❌ ${errorMsg}`);
+                        } else {
+                            console.error('Failed to update file status', err);
+                        }
+                        // Revert local state on failure
                         fetchFiles();
                     }
                 }

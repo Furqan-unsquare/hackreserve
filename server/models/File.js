@@ -4,7 +4,21 @@ const DocumentSchema = new mongoose.Schema({
     name: { type: String, required: true },
     type: { type: String, required: true }, // 'file' or 'url'
     url: { type: String },
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now },
+    verification: {
+        status: { type: String, enum: ['pending', 'verified', 'flagged', 'failed'], default: 'pending' },
+        score: { type: Number },
+        extractedData: {
+            name: { type: String },
+            idNumber: { type: String },
+            dob: { type: String }
+        },
+        logs: [{
+            timestamp: { type: Date, default: Date.now },
+            message: { type: String }
+        }],
+        error: { type: String }
+    }
 });
 
 const FollowUpSchema = new mongoose.Schema({
@@ -18,6 +32,7 @@ const FileSchema = new mongoose.Schema({
     name: { type: String, required: true },
     category: { type: String, required: true },
     status: { type: String, default: 'onboarded' },
+    verificationStatus: { type: String, enum: ['pending', 'verified', 'flagged', 'failed'], default: 'pending' },
     documents: [DocumentSchema],
     followUps: [FollowUpSchema],
     createdAt: { type: Date, default: Date.now }

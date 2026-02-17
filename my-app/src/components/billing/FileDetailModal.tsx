@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Trash2,  Send, Calendar, User } from 'lucide-react';
+import { Save, Trash2, Send, Calendar, User } from 'lucide-react';
 import api from '../../api/axios';
 import DocumentModal from './DocumentModal';
 
@@ -11,7 +11,7 @@ interface FileDetailModalProps {
     onFollowUp: () => void;
 }
 
-const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onClose, onUpdate, onDelete, onFollowUp }) => {
+const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onUpdate, onDelete, onFollowUp }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ ...file });
     const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onClose, onUpda
             <div className="modal-content" style={{ maxWidth: '550px' }}>
                 <div className="modal-header">
                     <h3>{isEditing ? 'Edit File' : 'File Details'}</h3>
-                    <button onClick={onClose} className="close-btn"><X size={20} /></button>
+                    {/* <button onClick={onClose} className="close-btn"><X size={20} /></button> */}
                 </div>
                 <div className="modal-body">
                     <div style={{ display: 'grid', gap: '1.5rem' }}>

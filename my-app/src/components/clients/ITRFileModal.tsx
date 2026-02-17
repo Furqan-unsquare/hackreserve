@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, CheckCircle, Image as ImageIcon } from 'lucide-react';
+import { Upload, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import api from '../../api/axios';
 
 interface ITRFileModalProps {
@@ -13,23 +13,23 @@ const ITRFileModal: React.FC<ITRFileModalProps> = ({ client, onClose, onSuccess 
     const [fileName, setFileName] = useState(`${client.category} ITR - ${new Date().getFullYear()}`);
     const [uploads, setUploads] = useState<Record<string, { label: string, url: string }>>({});
 
-    const individualDocs = [
+    const salariedDocs = [
         { id: 'pan', label: 'PAN Card' },
-        { id: 'aadhar', label: 'Aadhar Card' },
-        { id: 'passbook', label: 'Bank Passbook/Statement' },
+        { id: 'aadhar', label: 'Aadhaar Card' },
         { id: 'form16', label: 'Form 16' },
-        { id: 'salary', label: 'Salary Slip' },
-        { id: 'other', label: 'Other Documents' }
+        { id: 'passbook', label: 'Passbook' }
     ];
 
     const businessDocs = [
-        { id: 'gst', label: 'GST Certificate' },
-        { id: 'balance_sheet', label: 'Balance Sheet' },
-        { id: 'pnl', label: 'P&L Statement' },
-        { id: 'bank', label: 'Business Bank Statement' }
+        { id: 'bank_statement', label: 'Bank Statement (Annual)' },
+        { id: 'tds_q', label: 'TDS Quarterly' },
+        { id: 'tds_m', label: 'TDS Monthly Challan' },
+        { id: 'gst', label: 'GST Return (Monthly/Annually)' },
+        { id: 'income_stmt', label: 'Annual Income Statement' },
+        { id: 'pnl', label: 'P&L Balance Sheet' }
     ];
 
-    const docsToDisplay = client.category === 'Individual' ? individualDocs : businessDocs;
+    const docsToDisplay = client.category?.toLowerCase() === 'salaried' ? salariedDocs : businessDocs;
 
     const handleFileUpload = (docId: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -79,7 +79,7 @@ const ITRFileModal: React.FC<ITRFileModalProps> = ({ client, onClose, onSuccess 
             <div className="modal-content" style={{ maxWidth: '650px' }}>
                 <div className="modal-header">
                     <h3>File ITR for {client.name}</h3>
-                    <button onClick={onClose} className="close-btn"><X size={20} /></button>
+                    {/* <button onClick={onClose} className="close-btn"><X size={20} /></button> */}
                 </div>
                 <form onSubmit={handleSubmit} className="modal-body">
                     <div className="form-group">

@@ -12,7 +12,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSubmit, initialData 
         name: '',
         email: '',
         phone: '',
-        category: 'Individual',
+        category: 'salaried',
         details: '',
         status: 'onboarded'
     });
@@ -78,9 +78,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSubmit, initialData 
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                         >
-                            <option value="Individual">Individual</option>
-                            <option value="Business">Business</option>
-                            <option value="Trust">Trust</option>
+                            <option value="salaried">salaried</option>
+                            <option value="small business">small business</option>
                         </select>
                     </div>
                     <div className="form-group">
