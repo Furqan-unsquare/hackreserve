@@ -207,58 +207,82 @@ const updateOverallStatus = async (fileId) => {
 };
 
 const addDocument = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, type, url } = req.body;
-        const file = await File.findById(id);
-        if (!file) return res.status(404).json({ error: 'File not found' });
+  try {
+    const { id } = req.params;
+    const { name, type } = req.body;
 
-        let s3Url = url;
-        if (url && url.startsWith('data:image')) {
-            s3Url = await uploadToS3(url, name);
-        }
+    const file = await File.findById(id);
+    if (!file) return res.status(404).json({ error: 'File not found' });
 
-        const newDoc = {
-            name,
-            type,
-            url: s3Url,
-            timestamp: new Date(),
-            verification: { status: 'pending', logs: [{ message: 'Document added and stored in S3, waiting for processing...' }] }
-        };
+    let s3Url = null;
 
-        file.documents.push(newDoc);
-        const savedFile = await file.save();
-        const docWithId = savedFile.documents[savedFile.documents.length - 1];
-
-        const lowerName = name.toLowerCase();
-        if ((lowerName.includes('pan') || lowerName.includes('aadhar')) && s3Url) {
-            const client = await Client.findById(file.clientId);
-            if (client) {
-                // Background processing
-                kycService.verifyDocument(s3Url, client).then(async (result) => {
-                    const updatedFile = await File.findById(file._id);
-                    const doc = updatedFile.documents.id(docWithId._id);
-                    if (doc) {
-                        doc.detectedType = result.detectedType || 'Unknown';
-                        doc.verification = {
-                            status: result.status,
-                            score: result.score,
-                            extractedData: result.extracted,
-                            logs: result.logs,
-                            error: result.error
-                        };
-                        await updatedFile.save();
-                        await updateOverallStatus(file._id);
-                    }
-                }).catch(console.error);
-            }
-        }
-
-        res.status(201).json(docWithId);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+    // 🔥 CASE 1: Multipart upload (from n8n or browser)
+    if (req.file) {
+      s3Url = await uploadToS3(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
     }
+
+    // 🔥 CASE 2: Base64 upload (legacy support)
+    else if (req.body.url && req.body.url.startsWith('data:')) {
+      s3Url = await uploadToS3(req.body.url, name);
+    }
+
+    else {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const newDoc = {
+      name,
+      type,
+      url: s3Url,
+      timestamp: new Date(),
+      verification: {
+        status: 'pending',
+        logs: [{ message: 'Document uploaded to S3, waiting for processing...' }]
+      }
+    };
+
+    file.documents.push(newDoc);
+    const savedFile = await file.save();
+    const docWithId = savedFile.documents[savedFile.documents.length - 1];
+
+    // 🔥 DO NOT trust filename for detection
+    // Let OCR decide
+    const client = await Client.findById(file.clientId);
+
+    if (client && s3Url) {
+      kycService.verifyDocument(s3Url, client)
+        .then(async (result) => {
+          const updatedFile = await File.findById(file._id);
+          const doc = updatedFile.documents.id(docWithId._id);
+
+          if (doc) {
+            doc.detectedType = result.detectedType || 'Unknown';
+            doc.verification = {
+              status: result.status,
+              score: result.score,
+              extractedData: result.extracted,
+              logs: result.logs,
+              error: result.error
+            };
+
+            await updatedFile.save();
+            await updateOverallStatus(file._id);
+          }
+        })
+        .catch(console.error);
+    }
+
+    res.status(201).json(docWithId);
+
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 };
+
 
 const getClientFiles = async (req, res) => {
     try {

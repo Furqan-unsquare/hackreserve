@@ -12,7 +12,7 @@ router.put('/:id/status', fileController.updateFileStatus);
 router.post('/:id/follow-up', fileController.addFollowUp);
 router.get('/client/:clientId', fileController.getClientFiles); // Alternative route
 router.get('/:id/documents', fileController.getDocuments);
-router.post('/:id/documents', fileController.addDocument);
+router.post('/:id/documents',  fileController.addDocument);
 router.post('/:id/documents/:docId/verify', fileController.verifyDocument);
 
 module.exports = router;
