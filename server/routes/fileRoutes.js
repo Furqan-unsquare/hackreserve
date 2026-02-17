@@ -2,6 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const fileController = require('../controllers/fileController');
+const multer = require('multer');
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 
 router.get('/stats', fileController.getDashboardStats);
 router.get('/', fileController.getAllFiles);
@@ -12,7 +17,7 @@ router.put('/:id/status', fileController.updateFileStatus);
 router.post('/:id/follow-up', fileController.addFollowUp);
 router.get('/client/:clientId', fileController.getClientFiles); // Alternative route
 router.get('/:id/documents', fileController.getDocuments);
-router.post('/:id/documents',  fileController.addDocument);
+router.post('/:id/documents', upload.single('file'), fileController.addDocument);
 router.post('/:id/documents/:docId/verify', fileController.verifyDocument);
 
 module.exports = router;
