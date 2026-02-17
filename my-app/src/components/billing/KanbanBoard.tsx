@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { FileText, User, Eye, Edit2, Trash2, Send } from 'lucide-react';
+import { FileText, User, Eye, Edit2, Trash2, Send, ChevronDown } from 'lucide-react';
 
 export const KanbanItem = ({
     id,
@@ -28,7 +28,6 @@ export const KanbanItem = ({
         zIndex: isDragging ? 100 : 1,
     } : undefined;
 
-    // Stop propagation for action buttons so dragging doesn't trigger
     const handleAction = (e: React.MouseEvent, action: () => void) => {
         e.stopPropagation();
         action();
@@ -41,6 +40,8 @@ export const KanbanItem = ({
             {...listeners}
             {...attributes}
             className="kanban-item"
+            onClick={() => onView(id)} // Entire card clickable
+            role="button"
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -95,10 +96,14 @@ export const KanbanItem = ({
     );
 };
 
-export const KanbanColumn = ({ id, title, children, color }: { id: string, title: string, children: React.ReactNode, color: string }) => {
+export const KanbanColumn = ({ id, title, children, color }: { id: string, title: string, children: React.ReactNode[], color: string }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: id,
     });
+
+    const [visibleCount, setVisibleCount] = useState(3);
+    const childrenArray = React.Children.toArray(children);
+    const hasMore = childrenArray.length > visibleCount;
 
     return (
         <div
@@ -113,12 +118,35 @@ export const KanbanColumn = ({ id, title, children, color }: { id: string, title
                 <h4 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {title}
                     <span style={{ fontSize: '0.75rem', background: '#e2e8f0', padding: '2px 8px', borderRadius: '12px' }}>
-                        {React.Children.count(children)}
+                        {childrenArray.length}
                     </span>
                 </h4>
             </div>
             <div className="kanban-column-content">
-                {children}
+                {childrenArray.slice(0, visibleCount)}
+                {hasMore && (
+                    <button
+                        onClick={() => setVisibleCount(prev => prev + 4)}
+                        style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            background: 'white',
+                            border: '1px dashed var(--border)',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            color: 'var(--primary)',
+                            cursor: 'pointer',
+                            marginTop: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <ChevronDown size={14} />
+                        Load {childrenArray.length - visibleCount} more
+                    </button>
+                )}
             </div>
         </div>
     );

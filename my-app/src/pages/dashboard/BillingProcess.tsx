@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     DndContext,
     DragOverlay,
@@ -11,7 +11,9 @@ import {
     type DragEndEvent
 } from '@dnd-kit/core';
 import { KanbanColumn, KanbanItem } from '../../components/billing/KanbanBoard';
-import DocumentModal from '../../components/billing/DocumentModal';
+import FileDetailModal from '../../components/billing/FileDetailModal';
+import QuickAddBilling from '../../components/billing/QuickAddBilling';
+import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 
 const COLUMNS = [
@@ -26,6 +28,7 @@ const BillingProcess = () => {
     const [loading, setLoading] = useState(true);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [viewingFile, setViewingFile] = useState<any>(null);
+    const [isAddingFile, setIsAddingFile] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -82,11 +85,9 @@ const BillingProcess = () => {
         setViewingFile(file);
     };
 
-    const handleEdit = (id: string) => {
-        const newName = window.prompt('Enter new name for this file:');
-        if (newName) {
-            api.put(`/api/files/${id}`, { name: newName }).then(() => fetchFiles());
-        }
+    const handleUpdate = () => {
+        fetchFiles();
+        setViewingFile(null);
     };
 
     const handleDelete = async (id: string) => {
@@ -94,6 +95,7 @@ const BillingProcess = () => {
             try {
                 await api.delete(`/api/files/${id}`);
                 setFiles(files.filter(f => f.id !== id));
+                setViewingFile(null);
             } catch (err) {
                 console.error('Failed to delete file', err);
             }
@@ -103,8 +105,11 @@ const BillingProcess = () => {
     const handleFollowUp = async (id: string) => {
         try {
             const response = await api.post(`/api/files/${id}/follow-up`);
-            setFiles(files.map(f => f.id === id ? response.data : f));
-            alert('Follow-up recorded and status updated.');
+            const updatedFiles = files.map(f => f.id === id ? { ...response.data, id: response.data._id || response.data.id } : f);
+            setFiles(updatedFiles);
+            if (viewingFile?.id === id) {
+                setViewingFile(updatedFiles.find(f => f.id === id));
+            }
         } catch (err) {
             console.error('Failed to send follow-up', err);
         }
@@ -120,7 +125,17 @@ const BillingProcess = () => {
 
     return (
         <div>
-            <h2 style={{ marginBottom: '1.5rem' }}>Billing Workflow (Kanban)</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2>Billing Workflow (Kanban)</h2>
+                <button
+                    className="btn btn-primary"
+                    style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    onClick={() => setIsAddingFile(true)}
+                >
+                    <Plus size={20} />
+                    New Billing Item
+                </button>
+            </div>
 
             <DndContext
                 sensors={sensors}
@@ -137,9 +152,9 @@ const BillingProcess = () => {
                                     id={file.id}
                                     client={file}
                                     onView={handleView}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                    onFollowUp={handleFollowUp}
+                                    onEdit={handleView} // Use shared modal for edit now
+                                    onDelete={() => handleDelete(file.id)}
+                                    onFollowUp={() => handleFollowUp(file.id)}
                                 />
                             ))}
                         </KanbanColumn>
@@ -152,19 +167,31 @@ const BillingProcess = () => {
                             id={activeFile.id}
                             client={activeFile}
                             onView={handleView}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onFollowUp={handleFollowUp}
+                            onEdit={handleView}
+                            onDelete={() => handleDelete(activeFile.id)}
+                            onFollowUp={() => handleFollowUp(activeFile.id)}
                         />
                     ) : null}
                 </DragOverlay>
             </DndContext>
 
             {viewingFile && (
-                <DocumentModal
-                    fileId={viewingFile.id}
-                    name={viewingFile.name}
+                <FileDetailModal
+                    file={viewingFile}
                     onClose={() => setViewingFile(null)}
+                    onUpdate={handleUpdate}
+                    onDelete={() => handleDelete(viewingFile.id)}
+                    onFollowUp={() => handleFollowUp(viewingFile.id)}
+                />
+            )}
+
+            {isAddingFile && (
+                <QuickAddBilling
+                    onClose={() => setIsAddingFile(false)}
+                    onSuccess={() => {
+                        setIsAddingFile(false);
+                        fetchFiles();
+                    }}
                 />
             )}
         </div>
