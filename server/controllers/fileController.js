@@ -2,6 +2,7 @@ const File = require('../models/File');
 const Client = require('../models/Client');
 const mongoose = require('mongoose');
 const kycService = require('../services/kycService');
+const { uploadToS3 } = require('../services/uploadService');
 const stringSimilarity = require('string-similarity');
 
 const REQUIRED_DOCUMENTS = {
@@ -76,6 +77,40 @@ const updateFileStatus = async (req, res) => {
                         missing,
                         message: `Cannot move to ITR Filing. Missing: ${missing.join(', ')}`
                     });
+                }
+            }
+        }
+
+        // Handle Billing Transitions
+        if (status === 'billed') {
+            file.billedAt = new Date();
+            const { billingAmount, receivedAmount, paymentStatus } = req.body;
+            if (billingAmount !== undefined) file.billingAmount = billingAmount;
+            if (receivedAmount !== undefined) file.receivedAmount = receivedAmount;
+
+            if (!paymentStatus) {
+                if (file.receivedAmount >= file.billingAmount && file.billingAmount > 0) {
+                    file.paymentStatus = 'paid';
+                    file.status = 'completed';
+                } else if (file.receivedAmount > 0) {
+                    file.paymentStatus = 'partial';
+                } else {
+                    file.paymentStatus = 'pending';
+                }
+            } else {
+                file.paymentStatus = paymentStatus;
+                if (paymentStatus === 'paid') file.status = 'completed';
+            }
+        } else if (req.body.paymentStatus) {
+            // Support updating finance fields directly
+            file.paymentStatus = req.body.paymentStatus;
+            if (req.body.billingAmount !== undefined) file.billingAmount = req.body.billingAmount;
+            if (req.body.receivedAmount !== undefined) {
+                file.receivedAmount = req.body.receivedAmount;
+                // Auto-complete if fully paid
+                if (file.receivedAmount >= file.billingAmount && file.billingAmount > 0) {
+                    file.paymentStatus = 'paid';
+                    file.status = 'completed';
                 }
             }
         }
@@ -178,12 +213,17 @@ const addDocument = async (req, res) => {
         const file = await File.findById(id);
         if (!file) return res.status(404).json({ error: 'File not found' });
 
+        let s3Url = url;
+        if (url && url.startsWith('data:image')) {
+            s3Url = await uploadToS3(url, name);
+        }
+
         const newDoc = {
             name,
             type,
-            url,
+            url: s3Url,
             timestamp: new Date(),
-            verification: { status: 'pending', logs: [{ message: 'Document added, waiting for processing...' }] }
+            verification: { status: 'pending', logs: [{ message: 'Document added and stored in S3, waiting for processing...' }] }
         };
 
         file.documents.push(newDoc);
@@ -191,14 +231,15 @@ const addDocument = async (req, res) => {
         const docWithId = savedFile.documents[savedFile.documents.length - 1];
 
         const lowerName = name.toLowerCase();
-        if ((lowerName.includes('pan') || lowerName.includes('aadhar')) && url && url.startsWith('data:image')) {
+        if ((lowerName.includes('pan') || lowerName.includes('aadhar')) && s3Url) {
             const client = await Client.findById(file.clientId);
             if (client) {
                 // Background processing
-                kycService.verifyDocument(url, client).then(async (result) => {
+                kycService.verifyDocument(s3Url, client).then(async (result) => {
                     const updatedFile = await File.findById(file._id);
                     const doc = updatedFile.documents.id(docWithId._id);
                     if (doc) {
+                        doc.detectedType = result.detectedType || 'Unknown';
                         doc.verification = {
                             status: result.status,
                             score: result.score,
@@ -267,6 +308,43 @@ const verifyDocument = async (req, res) => {
     }
 };
 
+const getDashboardStats = async (req, res) => {
+    try {
+        const totalClients = await Client.countDocuments();
+        const totalFiles = await File.countDocuments();
+
+        const files = await File.find({});
+        const recentFiles = await File.find().sort({ updatedAt: -1 }).limit(5);
+
+        const stats = {
+            totalClients,
+            totalFiles,
+            pendingBilling: files.filter(f => f.status === 'itr-filing').length,
+            pendingDocuments: files.filter(f => f.status === 'onboarded').length,
+            completedFilings: files.filter(f => f.status === 'billed').length,
+            revenue: files.reduce((sum, f) => sum + (f.receivedAmount || 0), 0),
+            totalDue: files.reduce((sum, f) => sum + ((f.billingAmount || 0) - (f.receivedAmount || 0)), 0),
+            statusDistribution: {
+                onboarded: files.filter(f => f.status === 'onboarded').length,
+                kyc: files.filter(f => f.status === 'kyc').length,
+                'itr-filing': files.filter(f => f.status === 'itr-filing').length,
+                billed: files.filter(f => f.status === 'billed').length,
+                completed: files.filter(f => f.status === 'completed').length
+            },
+            recentActivity: recentFiles.map(f => ({
+                t: f.status === 'completed' ? 'Filing Completed' : f.status === 'billed' ? 'Billed Client' : 'File Updated',
+                d: f.clientName || 'Unknown Client',
+                s: f.paymentStatus === 'paid' ? 'Success' : 'Pending',
+                time: f.updatedAt
+            }))
+        };
+
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     getAllFiles,
     createFile,
@@ -277,5 +355,6 @@ module.exports = {
     getDocuments,
     addDocument,
     getClientFiles,
-    verifyDocument
+    verifyDocument,
+    getDashboardStats
 };

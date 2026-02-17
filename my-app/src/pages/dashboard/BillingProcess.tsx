@@ -17,10 +17,10 @@ import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 
 const COLUMNS = [
-    { id: 'onboarded', title: 'Onboarding', color: '#2563eb' },
-    { id: 'documentation', title: 'Documentation', color: '#d97706' },
-    { id: 'itr-filling', title: 'ITR Filling', color: '#16a34a' },
-    { id: 'billed', title: 'Billed', color: '#7c3aed' }
+    { id: 'onboarded', title: 'Onboarding', color: '#6366f1' },
+    { id: 'documentation', title: 'KYC & Docs', color: '#f59e0b' },
+    { id: 'itr-filing', title: 'ITR Filing', color: '#10b981' },
+    { id: 'billed', title: 'Billed', color: '#8b5cf6' }
 ];
 
 const BillingProcess = () => {
@@ -68,12 +68,20 @@ const BillingProcess = () => {
                 const newStatus = isColumn ? (over.id as string) : (files.find(f => f.id === over.id)?.status);
 
                 if (newStatus && newStatus !== activeFile.status) {
+                    let payload: any = { status: newStatus };
+
+                    if (newStatus === 'billed') {
+                        const amount = window.prompt(`Enter Billing Amount for ${activeFile.name}:`, '0');
+                        if (amount === null) return setActiveId(null); // Cancel drag
+                        payload.billingAmount = parseFloat(amount) || 0;
+                    }
+
                     setFiles(prev => prev.map(f =>
-                        f.id === active.id ? { ...f, status: newStatus } : f
+                        f.id === active.id ? { ...f, status: newStatus, billingAmount: payload.billingAmount || f.billingAmount } : f
                     ));
 
                     try {
-                        await api.put(`/api/files/${active.id}/status`, { status: newStatus });
+                        await api.put(`/api/files/${active.id}/status`, payload);
                     } catch (err: any) {
                         const errorMsg = err.response?.data?.message || 'Failed to update status';
                         if (err.response?.status === 400) {
@@ -134,18 +142,21 @@ const BillingProcess = () => {
     if (loading) return <div>Loading workflow...</div>;
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2>Billing Workflow (Kanban)</h2>
+        <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="text-left">
+                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Filing Workflow</h1>
+                    <p className="text-gray-500 mt-1 font-medium italic">Drag and drop clients to manage their filing lifecycle.</p>
+                </div>
+
                 <button
-                    className="btn btn-primary"
-                    style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="flex items-center gap-2 bg-indigo-600 text-white font-black uppercase tracking-widest text-xs px-6 py-3 rounded-2xl hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-200"
                     onClick={() => setIsAddingFile(true)}
                 >
                     <Plus size={20} />
                     New Billing Item
                 </button>
-            </div>
+            </header>
 
             <DndContext
                 sensors={sensors}

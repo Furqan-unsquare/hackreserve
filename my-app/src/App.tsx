@@ -6,6 +6,8 @@ import ClientProfile from './pages/dashboard/ClientProfile';
 import AddFile from './pages/dashboard/AddFile';
 import BillingProcess from './pages/dashboard/BillingProcess';
 import AdminProfile from './pages/dashboard/AdminProfile';
+import Overview from './pages/dashboard/Overview';
+import BillingManagement from './pages/dashboard/BillingManagement';
 
 function App() {
   return (
@@ -14,10 +16,12 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Navigate to="/dashboard/billing" replace />} />
+          <Route index element={<Navigate to="/dashboard/overview" replace />} />
+          <Route path="overview" element={<Overview />} />
           <Route path="client-profile" element={<ClientProfile />} />
           <Route path="add-file/:clientId" element={<AddFile />} />
           <Route path="billing" element={<BillingProcess />} />
+          <Route path="finance" element={<BillingManagement />} />
           <Route path="admin-profile" element={<AdminProfile />} />
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />

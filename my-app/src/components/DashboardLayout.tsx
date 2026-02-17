@@ -5,7 +5,9 @@ import {
     FileText,
     User,
     LogOut,
-    LayoutDashboard
+    LayoutDashboard,
+    Home,
+    IndianRupee
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -26,13 +28,21 @@ const Sidebar = () => {
                     <span>CA Dashboard</span>
                 </div>
                 <nav className="sidebar-nav">
+                    <NavLink to="/dashboard/overview" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                        <Home size={20} />
+                        <span>Overview</span>
+                    </NavLink>
                     <NavLink to="/dashboard/client-profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                         <Users size={20} />
                         <span>Client Profile</span>
                     </NavLink>
                     <NavLink to="/dashboard/billing" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                         <FileText size={20} />
-                        <span>Billing Process</span>
+                        <span>Filing Kanban</span>
+                    </NavLink>
+                    <NavLink to="/dashboard/finance" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                        <IndianRupee size={20} />
+                        <span>Billing & Due</span>
                     </NavLink>
                     <NavLink to="/dashboard/admin-profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                         <User size={20} />

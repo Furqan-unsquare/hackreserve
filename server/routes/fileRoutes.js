@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const fileController = require('../controllers/fileController');
 
+router.get('/stats', fileController.getDashboardStats);
 router.get('/', fileController.getAllFiles);
 router.post('/', fileController.createFile);
 router.put('/:id', fileController.updateFile);
