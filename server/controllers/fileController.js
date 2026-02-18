@@ -207,80 +207,134 @@ const updateOverallStatus = async (fileId) => {
 };
 
 const addDocument = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, type } = req.body;
+    try {
+        const { id } = req.params;
+        const { name, type } = req.body;
 
-    const file = await File.findById(id);
-    if (!file) return res.status(404).json({ error: 'File not found' });
+        const file = await File.findById(id);
+        if (!file) return res.status(404).json({ error: 'File not found' });
 
-    let s3Url = null;
+        let s3Url = null;
 
-    // 🔥 CASE 1: Multipart upload (from n8n or browser)
-    if (req.file) {
-      s3Url = await uploadToS3(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype
-      );
+        // 🔥 FIX: Handle various upload formats (File Buffer, Base64 String in Body, Base64 String in File)
+        if (req.file) {
+            // Check if buffer is actually a Base64 string (common in n8n/Postman raw uploads)
+            const bufferString = req.file.buffer.toString('utf-8');
+            if (bufferString.startsWith('data:') && bufferString.includes('base64,')) {
+                // It's a Base64 string sent as a file
+                s3Url = await uploadToS3(bufferString, name);
+            } else {
+                // It's a real binary file
+                s3Url = await uploadToS3(
+                    req.file.buffer,
+                    req.file.originalname,
+                    req.file.mimetype
+                );
+            }
+        } else if (req.body.url && req.body.url.startsWith('data:')) {
+            // Base64 in body.url
+            s3Url = await uploadToS3(req.body.url, name);
+        } else {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+
+        const newDoc = {
+            name,
+            type,
+            url: s3Url,
+            timestamp: new Date(),
+            verification: {
+                status: 'pending',
+                logs: [{ message: 'Document uploaded to S3, waiting for processing...' }]
+            }
+        };
+
+        // 🔥 OVERWRITE LOGIC: Replace existing document with same name
+        const existingDocIndex = file.documents.findIndex(d => d.name === name);
+        if (existingDocIndex !== -1) {
+            // Preserve ID if needed, or just replace
+            file.documents[existingDocIndex] = newDoc;
+        } else {
+            file.documents.push(newDoc);
+        }
+
+        // 🔥 Auto-update status to 'kyc' if it was 'onboarded' (since docs are now present)
+        if (file.status === 'onboarded') {
+            file.status = 'kyc';
+        }
+
+        const savedFile = await file.save();
+        const docWithId = savedFile.documents.find(d => d.name === name);
+
+        // Verification & Auto-Advance Logic
+        const client = await Client.findById(file.clientId);
+        if (client && s3Url) {
+            kycService.verifyDocument(s3Url, client)
+                .then(async (result) => {
+                    const updatedFile = await File.findById(file._id);
+                    const doc = updatedFile.documents.id(docWithId._id);
+
+                    if (doc) {
+                        doc.detectedType = result.detectedType || 'Unknown';
+                        doc.verification = {
+                            status: result.status,
+                            score: result.score,
+                            extractedData: result.extracted,
+                            logs: result.logs,
+                            error: result.error
+                        };
+
+                        await updatedFile.save();
+                        await updateOverallStatus(file._id);
+
+                        // 🔥 AUTO-ADVANCE LOGIC (Salaried Only)
+                        if (updatedFile.category?.toLowerCase() === 'salaried') {
+                            const required = REQUIRED_DOCUMENTS['salaried'];
+                            const verifiedDocs = updatedFile.documents
+                                .filter(d => d.verification.status === 'verified')
+                                .map(d => d.name);
+
+                            const allVerified = required.every(req => verifiedDocs.includes(req));
+
+                            if (allVerified && updatedFile.status !== 'completed' && updatedFile.status !== 'billed') {
+                                updatedFile.status = 'itr-filing';
+                                await updatedFile.save();
+                                console.log(`[AUTO-ADVANCE] File ${updatedFile._id} moved to ITR-Filing`);
+                            }
+                        }
+                    }
+                })
+                .catch(console.error);
+        }
+
+        res.status(201).json(docWithId);
+
+    } catch (err) {
+        console.error('Add Document Error:', err);
+        res.status(400).json({ error: err.message });
     }
+};
 
-    // 🔥 CASE 2: Base64 upload (legacy support)
-    else if (req.body.url && req.body.url.startsWith('data:')) {
-      s3Url = await uploadToS3(req.body.url, name);
+const getMissingDocuments = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const file = await File.findById(id);
+        if (!file) return res.status(404).json({ error: 'File not found' });
+
+        const requiredDocNames = REQUIRED_DOCUMENTS[file.category?.toLowerCase()] || [];
+        const uploadedDocNames = file.documents.map(d => d.name);
+        const missing = requiredDocNames.filter(reqName => !uploadedDocNames.includes(reqName));
+
+        res.json({
+            category: file.category,
+            required: requiredDocNames,
+            uploaded: uploadedDocNames,
+            missing: missing,
+            isComplete: missing.length === 0
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    else {
-      return res.status(400).json({ error: 'No file provided' });
-    }
-
-    const newDoc = {
-      name,
-      type,
-      url: s3Url,
-      timestamp: new Date(),
-      verification: {
-        status: 'pending',
-        logs: [{ message: 'Document uploaded to S3, waiting for processing...' }]
-      }
-    };
-
-    file.documents.push(newDoc);
-    const savedFile = await file.save();
-    const docWithId = savedFile.documents[savedFile.documents.length - 1];
-
-    // 🔥 DO NOT trust filename for detection
-    // Let OCR decide
-    const client = await Client.findById(file.clientId);
-
-    if (client && s3Url) {
-      kycService.verifyDocument(s3Url, client)
-        .then(async (result) => {
-          const updatedFile = await File.findById(file._id);
-          const doc = updatedFile.documents.id(docWithId._id);
-
-          if (doc) {
-            doc.detectedType = result.detectedType || 'Unknown';
-            doc.verification = {
-              status: result.status,
-              score: result.score,
-              extractedData: result.extracted,
-              logs: result.logs,
-              error: result.error
-            };
-
-            await updatedFile.save();
-            await updateOverallStatus(file._id);
-          }
-        })
-        .catch(console.error);
-    }
-
-    res.status(201).json(docWithId);
-
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
 };
 
 
@@ -380,5 +434,6 @@ module.exports = {
     addDocument,
     getClientFiles,
     verifyDocument,
-    getDashboardStats
+    getDashboardStats,
+    getMissingDocuments
 };

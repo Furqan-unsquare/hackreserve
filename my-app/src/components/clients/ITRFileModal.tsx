@@ -143,7 +143,7 @@ const ITRFileModal: React.FC<ITRFileModalProps> = ({ client, onClose, onSuccess 
 
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                         <button type="button" className="btn" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn btn-primary" disabled={loading || Object.keys(uploads).length === 0}>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? 'Filing...' : 'Initiate Filing'}
                         </button>
                     </div>
