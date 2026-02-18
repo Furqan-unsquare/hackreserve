@@ -13,7 +13,8 @@ const BillingSchema = new mongoose.Schema({
         reference: { type: String }
     }],
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    followUp: { type: String, enum: ['pending', 'sent', 'reminded'], default: 'pending' }
 });
 
 module.exports = mongoose.model('Billing', BillingSchema);

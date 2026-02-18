@@ -8,11 +8,7 @@ const DocumentSchema = new mongoose.Schema({
     verification: {
         status: { type: String, enum: ['pending', 'verified', 'flagged', 'failed'], default: 'pending' },
         score: { type: Number },
-        extractedData: {
-            name: { type: String },
-            idNumber: { type: String },
-            dob: { type: String }
-        },
+        extractedData: { type: mongoose.Schema.Types.Mixed }, // Flexible JSON storage
         logs: [{
             timestamp: { type: Date, default: Date.now },
             message: { type: String }
@@ -23,7 +19,7 @@ const DocumentSchema = new mongoose.Schema({
 
 const FollowUpSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
-    version: { type: Number, required: true }
+    type: { type: String, enum: ['sent', 'reminded'], required: true }
 });
 
 const FileSchema = new mongoose.Schema({

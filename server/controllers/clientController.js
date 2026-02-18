@@ -12,6 +12,22 @@ const getAllClients = async (req, res) => {
     }
 };
 
+const getClientById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ error: 'Invalid client ID' });
+        }
+        const client = await Client.findById(id);
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        res.json({ ...client._doc, id: client._id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const getClientFiles = async (req, res) => {
     try {
         const { id } = req.params;
@@ -62,4 +78,4 @@ const deleteClient = async (req, res) => {
     }
 };
 
-module.exports = { getAllClients, createClient, updateClient, deleteClient, getClientFiles };
+module.exports = { getAllClients, createClient, updateClient, deleteClient, getClientFiles, getClientById };

@@ -162,12 +162,18 @@ const updateFile = async (req, res) => {
 const addFollowUp = async (req, res) => {
     try {
         const { id } = req.params;
+        const { type } = req.body; // 'sent' or 'reminded'
+
         const file = await File.findById(id);
         if (!file) return res.status(404).json({ error: 'File not found' });
 
+        if (!['sent', 'reminded'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid follow-up type' });
+        }
+
         const followUp = {
             timestamp: new Date(),
-            version: (file.followUps?.length || 0) + 1
+            type
         };
 
         file.followUps.push(followUp);

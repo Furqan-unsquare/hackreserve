@@ -8,7 +8,6 @@ import {
   BarChart3,
   ArrowUpRight,
   Search,
-  Bell,
   X,
   AlertCircle,
 } from 'lucide-react';
@@ -95,7 +94,7 @@ const Overview = () => {
           {showNotification && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-md text-xs">
               <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-              <span className="truncate font-medium text-gray-900 max-w-[200px]">
+              <span className="truncate font-medium text-gray-900 max-w-[600px]">
                 {notifications[notificationIndex]}
               </span>
               <button onClick={nextNotification} className="text-amber-700 text-xs p-0.5 hover:bg-amber-100 rounded">›</button>
@@ -112,11 +111,6 @@ const Overview = () => {
               className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-md w-48 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900"
             />
           </div>
-          <button className="p-1.5 border border-gray-200 rounded-md hover:bg-gray-50">
-            <Bell className="w-4 h-4 text-gray-600 relative">
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </Bell>
-          </button>
         </div>
       </div>
 

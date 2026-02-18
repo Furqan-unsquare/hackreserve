@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ClientForm from '../../components/clients/ClientForm';
 import ITRFileModal from '../../components/clients/ITRFileModal';
-import { Plus, ChevronDown, ChevronUp, FileText, Edit } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, FileText, Edit, Upload } from 'lucide-react';
 import api from '../../api/axios';
 
 const ClientProfile = () => {
@@ -75,79 +75,74 @@ const ClientProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-pulse flex flex-col items-center gap-3">
-          <div className="h-8 w-48 bg-gray-200 rounded"></div>
-          <div className="h-4 w-64 bg-gray-200 rounded"></div>
-        </div>
+      <div className="flex justify-center items-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Client Management</h2>
-        <button
-          onClick={() => {
-            setSelectedClient(null);
-            setIsFormOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <Plus size={18} />
-          Onboard New Client
-        </button>
+    <div className="p-4 mx-auto space-y-4">
+      {/* Compact Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
+          <p className="text-xs text-gray-500">Manage your client database</p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => {
+              setSelectedClient(null);
+              setIsFormOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md border border-green-500 shadow-sm hover:shadow-md transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Client
+          </button>
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md border border-gray-200 shadow-sm hover:shadow-md transition-all">
+            <Upload className="w-3.5 h-3.5" />
+            Import CSV
+          </button>
+          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md border border-gray-200 shadow-sm hover:shadow-md transition-all">
+            <Upload className="w-3.5 h-3.5" />
+            Import JSON
+          </button>
+        </div>
       </div>
 
-      {/* Guide text */}
-      {clients.length > 0 && (
-        <p className="text-sm text-gray-500 italic">
-          Tap any client row to view ITR filing history
-        </p>
-      )}
-
-      {/* Clients Table / Cards */}
-      <div className="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+      {/* Clients Table */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         {clients.length === 0 ? (
-          <div className="py-16 px-6 text-center">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FileText size={28} className="text-gray-400" />
+          <div className="py-12 px-6 text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <FileText className="w-6 h-6 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No clients yet</h3>
-            <p className="text-gray-500 mb-6">Start by onboarding your first client</p>
+            <h3 className="text-sm font-medium text-gray-900 mb-1">No clients yet</h3>
+            <p className="text-xs text-gray-500 mb-4">Start by adding your first client</p>
             <button
               onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs rounded-md"
             >
-              <Plus size={18} />
+              <Plus className="w-3.5 h-3.5" />
               Add Client
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Mobile
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Mobile</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100">
                 {clients.map((client) => {
                   const isExpanded = expandedClientId === client.id;
                   return (
@@ -156,53 +151,50 @@ const ClientProfile = () => {
                       <tr
                         onClick={() => toggleExpand(client.id)}
                         className={`
-                          cursor-pointer transition-colors duration-150
-                          ${isExpanded ? 'bg-teal-50' : 'hover:bg-gray-50'}
+                          cursor-pointer transition-colors hover:bg-gray-50 ${isExpanded ? 'bg-green-50' : ''}
                         `}
                       >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="text-gray-400">
-                              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="text-gray-400 p-0.5">
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </div>
-                            <span className="font-medium text-gray-900">{client.name}</span>
+                            <span className="font-medium text-gray-900 text-sm">{client.name}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">{client.email}</td>
-                        <td className="px-6 py-4 text-gray-700 font-medium">
+                        <td className="px-4 py-3 text-gray-600 text-sm">{client.email}</td>
+                        <td className="px-4 py-3 text-gray-700 font-medium text-sm">
                           {client.mobile || client.phone || '—'}
                         </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                              client.category?.toLowerCase() === 'individual'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-emerald-100 text-emerald-800'
-                            }`}
-                          >
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            client.category?.toLowerCase() === 'individual'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}>
                             {client.category || '—'}
                           </span>
                         </td>
-                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center gap-3">
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setFilingClient(client);
                               }}
-                              className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-md shadow-sm transition-all"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-600 hover:bg-green-600 text-white text-xs font-medium rounded-md shadow-sm transition-all"
                             >
-                              File ITR
+                              ITR
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEdit(client);
                               }}
-                              className="p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-full transition-colors"
+                              className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-all"
                               title="Edit client"
                             >
-                              <Edit size={18} />
+                              <Edit className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -211,42 +203,34 @@ const ClientProfile = () => {
                       {/* Expanded Content */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={5} className="p-0 bg-gray-50/70">
-                            <div className="p-6 border-t border-gray-200">
-                              <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <FileText size={18} className="text-teal-600" />
+                          <td colSpan={5} className="p-0 bg-gray-50/50">
+                            <div className="p-4 border-t border-gray-200">
+                              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                                <FileText className="w-4 h-4 text-green-600" />
                                 ITR Filing History
                               </h4>
 
                               {clientFiles[client.id]?.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                   {clientFiles[client.id].map((file) => (
                                     <div
                                       key={file.id}
-                                      className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all flex items-start gap-3"
+                                      className="bg-white p-2.5 rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-2 text-xs"
                                     >
-                                      <FileText size={20} className="text-teal-600 mt-0.5 flex-shrink-0" />
+                                      <FileText className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 truncate">
-                                          {file.name}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-0.5">
-                                          {new Date(file.createdAt).toLocaleDateString('en-IN', {
-                                            day: 'numeric',
-                                            month: 'short',
-                                            year: 'numeric',
-                                          })}
+                                        <p className="font-medium text-gray-900 truncate">{file.name}</p>
+                                        <p className="text-gray-500">
+                                          {new Date(file.createdAt).toLocaleDateString('en-IN')}
                                         </p>
                                       </div>
-                                      <div className="h-2.5 w-2.5 rounded-full bg-green-500 flex-shrink-0 mt-1"></div>
+                                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <div className="text-center py-8 bg-white rounded-lg border border-dashed border-gray-300">
-                                  <p className="text-gray-500 italic">
-                                    No ITR filings found for this client yet.
-                                  </p>
+                                <div className="text-center py-6 bg-white/50 rounded-md border border-dashed border-gray-200">
+                                  <p className="text-xs text-gray-500">No ITR filings yet</p>
                                 </div>
                               )}
                             </div>
