@@ -94,17 +94,26 @@ const updateFileStatus = async (req, res) => {
             if (receivedAmount !== undefined) file.receivedAmount = receivedAmount;
 
             if (!paymentStatus) {
-                if (file.receivedAmount >= file.billingAmount && file.billingAmount > 0) {
+                // Auto-calculate status based on amounts
+                const billed = file.billingAmount || 0;
+                const received = file.receivedAmount || 0;
+
+                if (billed > 0 && received >= billed) {
                     file.paymentStatus = 'paid';
                     file.status = 'completed';
-                } else if (file.receivedAmount > 0) {
+                } else if (received > 0 && received < billed) {
                     file.paymentStatus = 'partial';
                 } else {
                     file.paymentStatus = 'pending';
                 }
             } else {
                 file.paymentStatus = paymentStatus;
-                if (paymentStatus === 'paid') file.status = 'completed';
+                // If explicitly set to paid, ensure completed
+                if (paymentStatus === 'paid') {
+                    file.status = 'completed';
+                    // Optional: If paid but amounts don't match, maybe we should auto-correct? 
+                    // For now, trust the manual override but ensure completed.
+                }
             }
         } else if (req.body.paymentStatus) {
             // Support updating finance fields directly

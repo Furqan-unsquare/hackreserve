@@ -20,6 +20,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSubmit, initialData 
         gst: '',
         pan: '',
         personalPan: '',
+        aadhar: '',
         bankDetails: {
             accountNumber: '',
             ifsc: '',
@@ -60,8 +61,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSubmit, initialData 
                         {steps.map((s) => (
                             <div key={s.id} className="flex flex-col items-center relative z-10 w-24">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${step >= s.id
-                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                                        : 'bg-gray-100 text-gray-400'
+                                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                    : 'bg-gray-100 text-gray-400'
                                     }`}>
                                     {step > s.id ? <Check size={14} /> : s.id}
                                 </div>
@@ -154,6 +155,17 @@ const ClientForm: React.FC<ClientFormProps> = ({ onClose, onSubmit, initialData 
                                     value={formData.personalPan || ''}
                                     onChange={(e) => setFormData({ ...formData, personalPan: e.target.value.toUpperCase() })}
                                     placeholder="ABCDE1234F"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                    value={formData.aadhar || ''}
+                                    onChange={(e) => setFormData({ ...formData, aadhar: e.target.value })}
+                                    placeholder="0000 0000 0000"
                                 />
                             </div>
 

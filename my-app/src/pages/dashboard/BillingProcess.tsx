@@ -17,10 +17,10 @@ import { Plus } from 'lucide-react';
 import api from '../../api/axios';
 
 const COLUMNS = [
-    { id: 'onboarded', title: 'Onboarding', color: '#6366f1' },
-    { id: 'documentation', title: 'KYC & Docs', color: '#f59e0b' },
-    { id: 'itr-filing', title: 'ITR Filing', color: '#10b981' },
-    { id: 'billed', title: 'Billed', color: '#8b5cf6' }
+    { id: 'onboarded', title: 'Onboarding', color: '#00A884' },
+    { id: 'documentation', title: 'KYC & Docs', color: '#F59E0B' },
+    { id: 'itr-filing', title: 'ITR Filing', color: '#00A884' },
+    { id: 'billed', title: 'Billed', color: '#00A884' }
 ];
 
 const BillingProcess = () => {
@@ -71,9 +71,9 @@ const BillingProcess = () => {
                     let payload: any = { status: newStatus };
 
                     if (newStatus === 'billed') {
-                        const amount = window.prompt(`Enter Billing Amount for ${activeFile.name}:`, '0');
-                        if (amount === null) return setActiveId(null); // Cancel drag
-                        payload.billingAmount = parseFloat(amount) || 0;
+                        if (activeFile.billingAmount && activeFile.billingAmount > 0) {
+                            payload.billingAmount = activeFile.billingAmount;
+                        }
                     }
 
                     setFiles(prev => prev.map(f =>
@@ -89,7 +89,6 @@ const BillingProcess = () => {
                         } else {
                             console.error('Failed to update file status', err);
                         }
-                        // Revert local state on failure
                         fetchFiles();
                     }
                 }
@@ -139,32 +138,37 @@ const BillingProcess = () => {
 
     const activeFile = activeId ? files.find(f => f.id === activeId) : null;
 
-    if (loading) return <div>Loading workflow...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-400"></div>
+        </div>
+    );
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                <div className="text-left">
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Filing Workflow</h1>
-                    <p className="text-gray-500 mt-1 font-medium italic">Drag and drop clients to manage their filing lifecycle.</p>
+        <div className="p-6 mx-auto">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Filing Kanban</h1>
+                    <p className="text-sm text-gray-600 mt-1">Drag files between stages to update status.</p>
                 </div>
-
                 <button
-                    className="flex items-center gap-2 bg-indigo-600 text-white font-black uppercase tracking-widest text-xs px-6 py-3 rounded-2xl hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-200"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-black transition-colors"
                     onClick={() => setIsAddingFile(true)}
                 >
-                    <Plus size={20} />
-                    New Billing Item
+                    <Plus className="w-4 h-4" />
+                    New File
                 </button>
-            </header>
+            </div>
 
+            {/* Kanban Board */}
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="kanban-board">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {COLUMNS.map(column => (
                         <KanbanColumn key={column.id} id={column.id} title={column.title} color={column.color}>
                             {getFilesByStatus(column.id).map(file => (
@@ -173,7 +177,7 @@ const BillingProcess = () => {
                                     id={file.id}
                                     client={file}
                                     onView={handleView}
-                                    onEdit={handleView} // Use shared modal for edit now
+                                    onEdit={handleView}
                                     onDelete={() => handleDelete(file.id)}
                                     onFollowUp={() => handleFollowUp(file.id)}
                                 />

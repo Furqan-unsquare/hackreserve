@@ -30,17 +30,6 @@ const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onClose, onUpda
         }
     };
 
-    const handleFollowUpClick = async () => {
-        setLoading(true);
-        try {
-            await onFollowUp();
-            // OnFollowUp in BillingProcess will refresh the files, which should update this modal's parent
-            // but we might need to refresh local state if we want immediate feedback
-        } finally {
-            setLoading(false);
-        }
-    };
-
     if (showDocs) {
         return <DocumentModal fileId={file.id} name={file.name} onClose={() => setShowDocs(false)} />;
     }
@@ -117,21 +106,6 @@ const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onClose, onUpda
                                     className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                                 >
                                     Manage Docs
-                                </button>
-                            </div>
-
-                            <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:border-blue-200 transition-colors bg-white">
-                                <div>
-                                    <div className="font-semibold text-sm text-gray-900">Follow-ups</div>
-                                    <div className="text-xs text-gray-500">Attempt version: v{file.followUps?.length || 0}</div>
-                                </div>
-                                <button
-                                    onClick={handleFollowUpClick}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
-                                    disabled={loading}
-                                >
-                                    <Send size={14} />
-                                    Send New
                                 </button>
                             </div>
                         </div>

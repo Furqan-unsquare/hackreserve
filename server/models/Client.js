@@ -11,6 +11,7 @@ const ClientSchema = new mongoose.Schema({
     gst: { type: String },
     pan: { type: String }, // Business PAN
     personalPan: { type: String },
+    aadhar: { type: String },
     bankDetails: {
         accountNumber: { type: String },
         ifsc: { type: String },
