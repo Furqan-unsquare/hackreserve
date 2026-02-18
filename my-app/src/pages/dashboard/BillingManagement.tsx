@@ -9,7 +9,6 @@ import {
     Clock,
     TrendingUp,
     FileText,
-    ArrowUpRight,
     Filter
 } from 'lucide-react';
 import api from '../../api/axios';
@@ -236,8 +235,26 @@ const BillingManagement = () => {
                                                 >
                                                     <Edit size={20} />
                                                 </button>
-                                                <button className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-400 hover:bg-white hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm">
-                                                    <ArrowUpRight size={20} />
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response = await api.get(`/api/files/${file._id}/invoice`, { responseType: 'blob' });
+                                                            const url = window.URL.createObjectURL(new Blob([response.data]));
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.setAttribute('download', `Invoice-${file.name}.pdf`);
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            link.remove();
+                                                        } catch (err) {
+                                                            console.error('Invoice download failed', err);
+                                                            alert('Could not download invoice. Ensure file is billed.');
+                                                        }
+                                                    }}
+                                                    className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-400 hover:bg-white hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
+                                                    title="Download Invoice"
+                                                >
+                                                    <FileText size={20} />
                                                 </button>
                                             </div>
                                         </td>

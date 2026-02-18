@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const kycService = require('../services/kycService');
 const { uploadToS3 } = require('../services/uploadService');
 const stringSimilarity = require('string-similarity');
+const { generateInvoice } = require('../services/invoiceService');
 
 const REQUIRED_DOCUMENTS = {
     'salaried': [
@@ -175,15 +176,12 @@ const getDocuments = async (req, res) => {
     }
 };
 
-/**
- * Checks overall verification by comparing multiple documents
- */
 const updateOverallStatus = async (fileId) => {
     const file = await File.findById(fileId);
     const docs = file.documents.filter(d => d.verification && d.verification.status === 'verified');
 
     if (docs.length < 2) {
-        file.verificationStatus = docs.length === 1 ? 'pending' : 'pending';
+        // file.verificationStatus uses default
         return await file.save();
     }
 
@@ -204,6 +202,22 @@ const updateOverallStatus = async (fileId) => {
     }
 
     await file.save();
+};
+
+const getInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const file = await File.findById(id);
+        if (!file) return res.status(404).json({ error: 'File not found' });
+
+        if (file.status !== 'billed' && file.status !== 'completed') {
+            return res.status(400).json({ error: 'Invoice available only for billed files' });
+        }
+
+        generateInvoice(file, res);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 const addDocument = async (req, res) => {
@@ -258,9 +272,9 @@ const addDocument = async (req, res) => {
             file.documents.push(newDoc);
         }
 
-        // 🔥 Auto-update status to 'kyc' if it was 'onboarded' (since docs are now present)
-        if (file.status === 'onboarded') {
-            file.status = 'kyc';
+        // 🔥 Auto-update status to 'documentation' if it was 'onboarded' (since docs are now present)
+        if (file.status === 'onboarded' || file.status === 'kyc') {
+            file.status = 'documentation';
         }
 
         const savedFile = await file.save();
@@ -337,7 +351,6 @@ const getMissingDocuments = async (req, res) => {
     }
 };
 
-
 const getClientFiles = async (req, res) => {
     try {
         const { clientId } = req.params;
@@ -404,7 +417,7 @@ const getDashboardStats = async (req, res) => {
             totalDue: files.reduce((sum, f) => sum + ((f.billingAmount || 0) - (f.receivedAmount || 0)), 0),
             statusDistribution: {
                 onboarded: files.filter(f => f.status === 'onboarded').length,
-                kyc: files.filter(f => f.status === 'kyc').length,
+                documentation: files.filter(f => f.status === 'documentation' || f.status === 'kyc').length,
                 'itr-filing': files.filter(f => f.status === 'itr-filing').length,
                 billed: files.filter(f => f.status === 'billed').length,
                 completed: files.filter(f => f.status === 'completed').length
@@ -435,5 +448,6 @@ module.exports = {
     getClientFiles,
     verifyDocument,
     getDashboardStats,
-    getMissingDocuments
+    getMissingDocuments,
+    getInvoice
 };

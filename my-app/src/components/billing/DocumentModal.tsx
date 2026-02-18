@@ -217,7 +217,8 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ fileId, name }) => {
                     <label className="form-label">Document Type</label>
                     <select className="form-input" value={docName} onChange={(e) => setDocName(e.target.value)} required>
                       <option value="">Select document type</option>
-                      {documentTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                      {(REQUIRED_DOCS_MAP[category] || documentTypes).map(type => <option key={type} value={type}>{type}</option>)}
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                   <div className="form-group">
