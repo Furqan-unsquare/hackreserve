@@ -19,7 +19,7 @@ const DocumentSchema = new mongoose.Schema({
 
 const FollowUpSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
-    type: { type: String, enum: ['sent', 'reminded'], required: true }
+    type: { type: String }
 });
 
 const FileSchema = new mongoose.Schema({

@@ -95,8 +95,35 @@ const updatePayment = async (req, res) => {
     }
 };
 
+// Update Billing Status
+const updateBilling = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const billing = await Billing.findByIdAndUpdate(id, { status }, { new: true });
+        if (!billing) return res.status(404).json({ error: 'Billing record not found' });
+
+        // Sync with File
+        const fileUpdate = {
+            paymentStatus: billing.status
+        };
+
+        if (billing.status === 'paid') {
+            fileUpdate.status = 'completed';
+        }
+
+        await File.findByIdAndUpdate(billing.fileId, fileUpdate);
+
+        res.json(billing);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     createBilling,
     getBillingByFile,
-    updatePayment
+    updatePayment,
+    updateBilling
 };
