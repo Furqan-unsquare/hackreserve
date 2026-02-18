@@ -35,6 +35,10 @@ const FileSchema = new mongoose.Schema({
     verificationStatus: { type: String, enum: ['pending', 'verified', 'flagged', 'failed'], default: 'pending' },
     documents: [DocumentSchema],
     followUps: [FollowUpSchema],
+    billingAmount: { type: Number, default: 0 },
+    receivedAmount: { type: Number, default: 0 },
+    paymentStatus: { type: String, enum: ['pending', 'partial', 'paid'], default: 'pending' },
+    dueDate: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });
 

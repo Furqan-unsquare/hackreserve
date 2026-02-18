@@ -114,12 +114,34 @@ const verifyDocument = async (imageData, client) => {
         const extractedName = extractName(text);
         const extractedDOB = extractDOB(text);
 
-        let detectedType = 'Unknown';
-        if (extractedPAN) detectedType = 'PAN';
-        else if (extractedAadhaar) detectedType = 'Aadhaar';
+        // HEURISTIC CHECKS
+        const hasIncomeTax = normalizedRaw.includes('INCOME TAX DEPARTMENT');
+        const hasGovtOfIndia = normalizedRaw.includes('GOVT OF INDIA') || normalizedRaw.includes('GOVERNMENT OF INDIA');
+        const hasUIDAI = normalizedRaw.includes('UIDAI') || normalizedRaw.includes('UNIQUE IDENTIFICATION');
+        const hasForm16 = normalizedRaw.includes('FORM 16') || normalizedRaw.includes('TDS');
 
-        addLog(`Detected Type: ${detectedType}`);
+        let detectedType = 'Unknown';
+        if (extractedPAN && hasIncomeTax) detectedType = 'PAN Card';
+        else if (extractedAadhaar && (hasUIDAI || hasGovtOfIndia)) detectedType = 'Aadhaar Card';
+        else if (hasForm16) detectedType = 'Form 16';
+
+        addLog(`Detected Type by Content: ${detectedType}`);
         addLog(`Extracted Data: Name[${extractedName || 'N/A'}] ID[${extractedPAN || extractedAadhaar || 'N/A'}] DOB[${extractedDOB || 'N/A'}]`);
+
+        // VALIDATION AGAINST EXPECTED TYPE (if provided)
+        if (client.expectedType) {
+            const expected = normalizeText(client.expectedType);
+            addLog(`Verifying against expected user input: ${client.expectedType}`);
+
+            if (expected.includes('PAN') && !hasIncomeTax) {
+                addLog('WARNING: Document flagged. User claimed PAN but "Income Tax Department" text missing.');
+                detectedType = 'Mismatch';
+            }
+            if (expected.includes('AADHAAR') && !hasUIDAI && !hasGovtOfIndia) {
+                addLog('WARNING: Document flagged. User claimed Aadhaar but UIDAI/Govt markers missing.');
+                detectedType = 'Mismatch';
+            }
+        }
 
         const normalizedClientName = normalizeText(client.name);
         addLog(`Comparing with Client Profile: ${normalizedClientName}`);
@@ -133,9 +155,15 @@ const verifyDocument = async (imageData, client) => {
         }
 
         const isIdValid = !!extractedPAN || !!extractedAadhaar;
-        const totalScore = (nameScore * 0.5) + (isIdValid ? 0.5 : 0);
+        // Boost score if detected type matches expected strong indicators
+        let scoreBoost = 0;
+        if (detectedType !== 'Unknown' && detectedType !== 'Mismatch') scoreBoost = 0.2;
 
-        const status = totalScore > 0.8 ? 'verified' : 'flagged';
+        const totalScore = (nameScore * 0.5) + (isIdValid ? 0.3 : 0) + scoreBoost;
+
+        let status = 'flagged';
+        if (totalScore > 0.70 && detectedType !== 'Mismatch') status = 'verified';
+
         addLog(`Verification result: ${status.toUpperCase()} (Total Score: ${totalScore.toFixed(2)})`);
 
         return {

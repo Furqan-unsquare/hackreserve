@@ -1,5 +1,6 @@
 const File = require('../models/File');
 const Client = require('../models/Client');
+const Billing = require('../models/Billing');
 const mongoose = require('mongoose');
 const kycService = require('../services/kycService');
 const { uploadToS3 } = require('../services/uploadService');
@@ -48,7 +49,10 @@ const createFile = async (req, res) => {
             category: client.category,
             status: 'onboarded',
             documents: [],
-            followUps: []
+            followUps: [],
+            billingAmount: req.body.amount || 0,
+            dueDate: req.body.dueDate || null,
+            paymentStatus: 'pending'
         });
 
         await newFile.save();
@@ -214,6 +218,20 @@ const getInvoice = async (req, res) => {
             return res.status(400).json({ error: 'Invoice available only for billed files' });
         }
 
+        // 🔥 Auto-create Billing Record if not exists
+        const existingBilling = await Billing.findOne({ fileId: file._id });
+        if (!existingBilling) {
+            const newBilling = new Billing({
+                clientId: file.clientId,
+                fileId: file._id,
+                totalAmount: file.billingAmount || 0,
+                paidAmount: file.receivedAmount || 0,
+                status: file.paymentStatus || 'pending'
+            });
+            await newBilling.save();
+            console.log(`[AUTO-BILLING] Created billing record for File ${file._id}`);
+        }
+
         generateInvoice(file, res);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -283,7 +301,10 @@ const addDocument = async (req, res) => {
         // Verification & Auto-Advance Logic
         const client = await Client.findById(file.clientId);
         if (client && s3Url) {
-            kycService.verifyDocument(s3Url, client)
+            // Pass the document name as the expected type for validation
+            const clientWithExpectedType = { ...client.toObject(), expectedType: name };
+
+            kycService.verifyDocument(s3Url, clientWithExpectedType)
                 .then(async (result) => {
                     const updatedFile = await File.findById(file._id);
                     const doc = updatedFile.documents.id(docWithId._id);

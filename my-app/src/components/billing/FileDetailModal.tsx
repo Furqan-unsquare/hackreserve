@@ -11,7 +11,7 @@ interface FileDetailModalProps {
     onFollowUp: () => void;
 }
 
-const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onUpdate, onDelete, onFollowUp }) => {
+const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onClose, onUpdate, onDelete, onFollowUp }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ ...file });
     const [loading, setLoading] = useState(false);
@@ -46,101 +46,132 @@ const FileDetailModal: React.FC<FileDetailModalProps> = ({ file, onUpdate, onDel
     }
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '550px' }}>
-                <div className="modal-header">
-                    <h3>{isEditing ? 'Edit File' : 'File Details'}</h3>
-                    {/* <button onClick={onClose} className="close-btn"><X size={20} /></button> */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        {isEditing ? 'Edit File' : 'File Details'}
+                    </h3>
+                    {/* <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X size={20} /></button> */}
                 </div>
-                <div className="modal-body">
-                    <div style={{ display: 'grid', gap: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px' }}>
-                            <div style={{ padding: '12px', background: 'white', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                <User size={24} color="var(--primary)" />
+
+                {/* Body */}
+                <div className="p-6 overflow-y-auto">
+                    <div className="space-y-6">
+                        {/* Client Info Card */}
+                        <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            <div className="p-3 bg-white rounded-full shadow-sm">
+                                <User size={24} className="text-blue-600" />
                             </div>
                             <div>
-                                <div style={{ fontWeight: 600, fontSize: '1.125rem' }}>{file.clientName}</div>
-                                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{file.category}</div>
+                                <div className="font-semibold text-lg text-gray-900">{file.clientName}</div>
+                                <div className="text-sm text-gray-500 capitalize">{file.category}</div>
                             </div>
                         </div>
 
-                        <div className="form-group">
-                            <label className="form-label">File Type / Name</label>
+                        {/* File Name Input/Display */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">File Type / Name</label>
                             {isEditing ? (
                                 <input
-                                    className="form-input"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                             ) : (
-                                <div style={{ fontWeight: 500 }}>{file.name}</div>
+                                <div className="text-gray-900 font-medium">{file.name}</div>
                             )}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div className="form-group">
-                                <label className="form-label">Status</label>
-                                <span className={`badge badge-${file.status === 'billed' ? 'green' : 'blue'}`} style={{ width: 'fit-content' }}>
+                        {/* Status Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                                    ${file.status === 'billed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                                     {file.status}
                                 </span>
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Created At</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Created At</label>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Calendar size={14} />
                                     {new Date(file.createdAt).toLocaleDateString()}
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px' }}>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Documents</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{file.documents?.length || 0} files attached</div>
+                        {/* Sections: Docs & Follow-ups */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:border-blue-200 transition-colors bg-white">
+                                <div>
+                                    <div className="font-semibold text-sm text-gray-900">Documents</div>
+                                    <div className="text-xs text-gray-500">{file.documents?.length || 0} files attached</div>
+                                </div>
+                                <button
+                                    onClick={() => setShowDocs(true)}
+                                    className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                >
+                                    Manage Docs
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setShowDocs(true)}
-                                className="btn btn-primary"
-                                style={{ width: 'auto', padding: '6px 16px', fontSize: '0.8125rem' }}
-                            >
-                                Manage Docs
-                            </button>
-                        </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px' }}>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Follow-ups</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Attempt version: v{file.followUps?.length || 0}</div>
+                            <div className="flex justify-between items-center p-4 border border-gray-200 rounded-xl hover:border-blue-200 transition-colors bg-white">
+                                <div>
+                                    <div className="font-semibold text-sm text-gray-900">Follow-ups</div>
+                                    <div className="text-xs text-gray-500">Attempt version: v{file.followUps?.length || 0}</div>
+                                </div>
+                                <button
+                                    onClick={handleFollowUpClick}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+                                    disabled={loading}
+                                >
+                                    <Send size={14} />
+                                    Send New
+                                </button>
                             </div>
-                            <button
-                                onClick={handleFollowUpClick}
-                                className="btn"
-                                style={{ width: 'auto', padding: '6px 16px', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                disabled={loading}
-                            >
-                                <Send size={14} />
-                                Send New
-                            </button>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                            {isEditing ? (
-                                <>
-                                    <button className="btn" onClick={() => setIsEditing(false)}>Cancel</button>
-                                    <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
-                                        <Save size={16} /> Save Changes
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button className="btn" onClick={() => setIsEditing(true)}>Edit File</button>
-                                    <button className="btn delete" style={{ background: '#fee2e2', color: '#dc2626' }} onClick={onDelete}>
-                                        <Trash2 size={16} /> Delete
-                                    </button>
-                                </>
-                            )}
                         </div>
                     </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+                    {isEditing ? (
+                        <>
+                            <button
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 shadow-sm transition-all"
+                                onClick={() => setIsEditing(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-all flex items-center gap-2"
+                                onClick={handleSave}
+                                disabled={loading}
+                            >
+                                <Save size={16} /> Save Changes
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 shadow-sm transition-all"
+                                onClick={() => setIsEditing(true)}
+                            >
+                                Edit File
+                            </button>
+                            <button
+                                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all flex items-center gap-2 border border-red-100"
+                                onClick={onDelete}
+                            >
+                                <Trash2 size={16} /> Delete
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

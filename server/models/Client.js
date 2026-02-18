@@ -8,6 +8,14 @@ const ClientSchema = new mongoose.Schema({
     category: { type: String, enum: ['salaried', 'small business'], required: true },
     status: { type: String, default: 'onboarded' },
     details: { type: String },
+    gst: { type: String },
+    pan: { type: String }, // Business PAN
+    personalPan: { type: String },
+    bankDetails: {
+        accountNumber: { type: String },
+        ifsc: { type: String },
+        bankName: { type: String }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

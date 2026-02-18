@@ -8,45 +8,66 @@ interface ClientViewModalProps {
 
 const ClientViewModal: React.FC<ClientViewModalProps> = ({ client, onClose }) => {
     return (
-        <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '400px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h3>Client Details</h3>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 className="text-lg font-semibold text-gray-800">Client Details</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <X size={20} />
+                    </button>
                 </div>
 
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div className="p-6 space-y-6">
                     <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Full Name</label>
-                        <div style={{ fontWeight: 500, fontSize: '1.125rem' }}>{client.name}</div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Full Name</label>
+                        <div className="text-lg font-medium text-gray-900">{client.name}</div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+                    <div className="grid grid-cols-2 gap-6">
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Email</label>
-                            <div>{client.email}</div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Email</label>
+                            <div className="text-sm text-gray-900 break-all">{client.email}</div>
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Telegram ID</label>
-                            <div style={{ color: 'var(--primary)' }}>{client.telegramId || 'N/A'}</div>
-                        </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Category</label>
-                            <div>{client.category}</div>
-                        </div>
-                        <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Status</label>
-                            <div style={{ textTransform: 'capitalize' }}>{client.status}</div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Telegram ID</label>
+                            <div className="text-sm font-medium text-blue-600">{client.telegramId || 'N/A'}</div>
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Category</label>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
+                                {client.category}
+                            </span>
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Status</label>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 capitalize">
+                                {client.status}
+                            </span>
+                        </div>
+                    </div>
+
                     <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Details</label>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{client.details || 'No additional details provided.'}</p>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">Details</label>
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 leading-relaxed">
+                            {client.details || 'No additional details provided.'}
+                        </div>
                     </div>
                 </div>
 
-                <button className="btn btn-primary" style={{ marginTop: '1.5rem' }} onClick={onClose}>Close</button>
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                    <button
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-all"
+                        onClick={onClose}
+                    >
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     );
